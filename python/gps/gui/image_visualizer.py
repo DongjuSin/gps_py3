@@ -155,5 +155,6 @@ class ImageVisualizer(object):
         self._ax_image.draw_artist(self._plot)
         self._ax_image.draw_artist(self._overlay_plot_initial)
         self._ax_image.draw_artist(self._overlay_plot_target)
-        self._fig.canvas.update()
+        # self._fig.canvas.update() ## Qt4Agg
+        self._fig.canvas.draw() ## TKAgg
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend

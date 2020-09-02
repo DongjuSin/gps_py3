@@ -75,3 +75,12 @@ AGENT_MUJOCO = {
 AGENT_BOX2D = {
     'render': True,
 }
+
+AGENT_PANDA = {
+    'substeps': 1,
+    'camera_pos': np.array([2., 3., 2., 0., 0., 0.]),
+    'image_width': 300,
+    'image_height': 300,
+    'image_channels': 3,
+    'meta_include': []   
+}

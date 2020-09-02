@@ -16,7 +16,8 @@ def init_bias(shape, name=None):
 def batched_matrix_vector_multiply(vector, matrix):
     """ computes x^T A in mini-batches. """
     vector_batch_as_matricies = tf.expand_dims(vector, [1])
-    mult_result = tf.batch_matmul(vector_batch_as_matricies, matrix)
+    # mult_result = tf.batch_matmul(vector_batch_as_matricies, matrix)
+    mult_result = tf.matmul(vector_batch_as_matricies, matrix)
     squeezed_result = tf.squeeze(mult_result, [1])
     return squeezed_result
 

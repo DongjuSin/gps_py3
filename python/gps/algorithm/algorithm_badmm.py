@@ -55,6 +55,7 @@ class AlgorithmBADMM(Algorithm):
         # Run inner loop to compute new policies.
         for inner_itr in range(self._hyperparams['inner_iterations']):
             #TODO: Could start from init controller.
+            print "\ninner_iterations - ", inner_itr
             if self.iteration_count > 0 or inner_itr > 0:
                 # Update the policy.
                 self._update_policy(inner_itr)
@@ -65,6 +66,7 @@ class AlgorithmBADMM(Algorithm):
                 # Update dual variables.
                 for m in range(self.M):
                     self._policy_dual_step(m, step=step)
+            
             self._update_trajectories()
 
         self._advance_iteration_variables()

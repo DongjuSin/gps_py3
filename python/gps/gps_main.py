@@ -1,7 +1,8 @@
 """ This file defines the main object that runs experiments. """
 
 import matplotlib as mpl
-mpl.use('Qt4Agg')
+# mpl.use('Qt4Agg')
+mpl.use('TKAgg')
 
 import logging
 import imp
@@ -17,7 +18,9 @@ import traceback
 # Add gps/python to path so that imports work.
 sys.path.append('/'.join(str.split(__file__, '/')[:-2]))
 from gps.gui.gps_training_gui import GPSTrainingGUI
+
 from gps.utility.data_logger import DataLogger
+
 from gps.sample.sample_list import SampleList
 
 
@@ -76,7 +79,9 @@ class GPSMain(object):
                 self.agent.clear_samples()
 
                 self._take_iteration(itr, traj_sample_lists)
-                pol_sample_lists = self._take_policy_samples()
+                ## pretrain local controller
+                # pol_sample_lists = self._take_policy_samples()
+                pol_sample_lists = None
                 self._log_data(itr, traj_sample_lists, pol_sample_lists)
         except Exception as e:
             traceback.print_exception(*sys.exc_info())

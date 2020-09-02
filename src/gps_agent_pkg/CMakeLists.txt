@@ -33,6 +33,7 @@ include_directories($ENV{GPS_ROOT_DIR}/build/gps)
 #Include boost
 rosbuild_add_boost_directories()
 #find_package(Boost 1.46.0 COMPONENTS)
+# find_package(PythonInterp 2.7 REQUIRED)
 #if(Boost_FOUND)
     #include_directories(${Boost_INCLUDE_DIRS})
 #endif()

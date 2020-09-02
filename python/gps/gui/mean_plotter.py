@@ -90,7 +90,8 @@ class MeanPlotter:
         for plot in self._plots:
             self._ax.draw_artist(plot)
         self._ax.draw_artist(self._plots_mean)
-        self._fig.canvas.update()
+        # self._fig.canvas.update() ## Qt4Agg
+        self._fig.canvas.draw() ## TKAgg
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
 
     def draw_ticklabels(self):
@@ -100,5 +101,6 @@ class MeanPlotter:
         """
         for item in self._ax.get_xticklabels() + self._ax.get_yticklabels():
             self._ax.draw_artist(item)
-        self._fig.canvas.update()
+        # self._fig.canvas.update() ## Qt4Agg
+        self._fig.canvas.draw() ## TKAgg
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend

@@ -126,5 +126,6 @@ class Plotter3D:
         for i in range(len(self._plots)):
             for plot in self._plots[i]:
                 self._axarr[i].draw_artist(plot)
-        self._fig.canvas.update()
+        # self._fig.canvas.update() ## Qt4Agg
+        self._fig.canvas.draw() ## TKAgg
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
