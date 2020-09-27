@@ -17,18 +17,27 @@ from gps.algorithm.dynamics.dynamics_prior_gmm import DynamicsPriorGMM
 from gps.algorithm.traj_opt.traj_opt_lqr_python import TrajOptLQRPython
 from gps.algorithm.policy.lin_gauss_init import init_lqr
 from gps.gui.config import generate_experiment_info
-from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION
+from gps.proto.gps_pb2 import JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS, ACTION, \
+	RGB_IMAGE, RGB_IMAGE_SIZE, IMAGE_FEAT
+
+IMAGE_WIDTH = 300 # 640
+IMAGE_HEIGHT = 300 # 480
+IMAGE_CHANNELS = 3
+NUM_FP = 2
 
 SENSOR_DIMS = {
     JOINT_ANGLES: 2,
     JOINT_VELOCITIES: 2,
     END_EFFECTOR_POINTS: 3,
-    ACTION: 2
+    ACTION: 2,
+
+    RGB_IMAGE: IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNELS,
+    RGB_IMAGE_SIZE: IMAGE_CHANNELS,
+    IMAGE_FEAT: NUM_FP * 2, # affected by num_filters set below.
 }
 
 BASE_DIR = '/'.join(str.split(gps_filepath, '/')[:-2])
-EXP_DIR = BASE_DIR + '/../experiments/box2d_arm_example/'
-
+EXP_DIR = BASE_DIR + '/../experiments/box2d_realsense_example/'
 
 common = {
     'experiment_name': 'box2d_arm_example' + '_' + \
@@ -57,7 +66,11 @@ agent = {
     'T': 100,
     'sensor_dims': SENSOR_DIMS,
     'state_include': [JOINT_ANGLES, JOINT_VELOCITIES, END_EFFECTOR_POINTS],
-    'obs_include': [],
+    'obs_include': [JOINT_ANGLES, JOINT_VELOCITIES, RGB_IMAGE],
+
+    'image_width': IMAGE_WIDTH,
+    'image_height': IMAGE_HEIGHT,
+    'image_channels': IMAGE_CHANNELS,
 }
 
 algorithm = {

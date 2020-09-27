@@ -39,6 +39,9 @@ from gps.proto.gps_pb2 import END_EFFECTOR_POINTS
 from gps.algorithm.algorithm_badmm import AlgorithmBADMM
 from gps.algorithm.algorithm_mdgps import AlgorithmMDGPS
 
+# to check directory to save data is already exists
+import os
+
 class GPSTrainingGUI(object):
 
     def __init__(self, hyperparams):
@@ -48,6 +51,9 @@ class GPSTrainingGUI(object):
             self._target_filename = self._hyperparams['target_filename']
         else:
             self._target_filename = None
+
+        #dongju : to save controller and policy mean for each iteration
+        self.itr = 0
 
         # GPS Training Status.
         self.mode = config['initial_mode']  # Modes: run, wait, end, request, process.
@@ -231,8 +237,11 @@ class GPSTrainingGUI(object):
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
 
     def set_status_text(self, text):
+        print('set_status_text 1')
         self._status_output.set_text(text)
+        print('set_status_text 2')
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
+        print('set_status_text 2')
 
     def set_output_text(self, text):
         self._algthm_output.set_text(text)
@@ -272,6 +281,8 @@ class GPSTrainingGUI(object):
         After each iteration, update the iteration data output, the cost plot,
         and the 3D trajectory visualizations (if end effector points exist).
         """
+        self.itr = itr
+
         if self._first_update:
             self._output_column_titles(algorithm)
             self._first_update = False
@@ -410,6 +421,13 @@ class GPSTrainingGUI(object):
                     marker='x', markersize=5.0, markeredgewidth=1.0,
                     color=(0.5, 0, 0), alpha=1.0, label='LG Controller Means')
 
+        path = self._hyperparams['data_files_dir'] + 'check_traj'
+        if not os.path.exists(path):
+            os.mkdir(path)
+            print(path, ' is created')
+        fname = path + '/controller_%d_%d.npz' % (self.itr, m)
+        np.savez_compressed(fname, mu_eept=mu_eept, sigma_eept=sigma_eept)
+
     def _update_samples_plots(self, sample_lists, m, color, label):
         """
         Update the samples plots with iteration data, for the trajectory samples
@@ -422,5 +440,12 @@ class GPSTrainingGUI(object):
                 ee_pt_i = ee_pt[:, 3*i+0:3*i+3]
                 self._traj_visualizer.plot_3d_points(m, ee_pt_i, color=color, label=label)
 
+        path = self._hyperparams['data_files_dir'] + 'check_traj'
+        if not os.path.exists(path):
+            os.mkdir(path)
+            print(path, ' is created')
+        fname = path + '/policy_%d_%d.npz' % (self.itr, m)
+        np.savez_compressed(fname, ee_pt = ee_pt)
+        
     def save_figure(self, filename):
         self._fig.savefig(filename)

@@ -5,14 +5,25 @@ import numpy as np
 
 import rospy
 
+# import os
+# import sys
+# sys.path.append("/home/panda_gps/gps/src/gps_agent_pkg")
+# sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
 from gps.agent.agent import Agent
 from gps.agent.agent_utils import generate_noise, setup
 from gps.agent.config import AGENT_ROS
 from gps.agent.ros.ros_utils import ServiceEmulator, msg_to_sample, \
         policy_to_msg, tf_policy_to_action_msg, tf_obs_msg_to_numpy
 from gps.proto.gps_pb2 import TRIAL_ARM, AUXILIARY_ARM
+
 from gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
         RelaxCommand, DataRequest, TfActionCommand, TfObsData
+
+'''
+from src.gps_agent_pkg.msg import TrialCommand, SampleResult, PositionCommand, \
+        RelaxCommand, DataRequest, TfActionCommand, TfObsData
+'''
 try:
     from gps.algorithm.policy.tf_policy import TfPolicy
 except ImportError:  # user does not have tf installed.

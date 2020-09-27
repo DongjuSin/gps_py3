@@ -19,6 +19,9 @@ from gps.sample.sample import Sample
 from panda_robot import PandaArm
 from franka_interface import RobotEnable
 
+import pyrealsense2 as rs
+import cv2
+
 class AgentPanda(Agent):
     """
     All communication between the algorithms and MuJoCo is done through
@@ -30,6 +33,8 @@ class AgentPanda(Agent):
         Agent.__init__(self, config)
         
         rospy.init_node('gps_agent_panda')
+        self.period = self._hyperparams['dt']
+        self.r = rospy.Rate(1. / self.period)
         self._setup_conditions()
         # self._setup_world(hyperparams['filename'])
         self._set_initial_state()
@@ -38,6 +43,10 @@ class AgentPanda(Agent):
         self.panda = PandaArm()
         # if RGB_IMAGE in self.obs_data_types:
         #     self.panda.use_camera = True
+        self.pipeline = rs.pipeline()
+        self.config = rs.config()
+        self.config.enable_stream(rs.stream.color, self._hyperparams['image_width'], self._hyperparams['image_height'], rs.format.bgr8, 30)
+        self.pipeline.start(config)
 
     def _setup_conditions(self):
         """
@@ -71,7 +80,7 @@ class AgentPanda(Agent):
 
     ## NOT CALLED <-- REPLACED TO self.panda._setup_panda_world()
 
-    def sample(self, policy, condition, verbose=True, save=True, noisy=True):
+    def sample(self, policy, condition, iteration, verbose=True, save=True, noisy=True):
         """
         Runs a trial and constructs a new sample containing information
         about the trial.
@@ -86,11 +95,13 @@ class AgentPanda(Agent):
         feature_fn = None
         if 'get_features' in dir(policy):
             feature_fn = policy.get_features
-
+        # noisy = False
         ## TODO : where below line should be located?
         new_sample = self._init_sample(condition, feature_fn=feature_fn)
         mj_X = self._hyperparams['x0'][condition]
         U = np.zeros([self.T, self.dU])
+        U_origin = np.zeros([self.T, self.dU])
+
         if noisy:
             noise = generate_noise(self.T, self.dU, self._hyperparams)
         else:
@@ -107,24 +118,43 @@ class AgentPanda(Agent):
                 var = self._hyperparams['noisy_body_var'][condition][i]
                 self._model[condition]['body_pos'][idx, :] += \
                         var * np.random.randn(1, 3)
-
+                        
+        torq_max1 = 45 # origin 87
+        torq_max2 = 6 # origin 12
+        
+        # self.panda.set_force_threshold_for_collision([20, 20, 10, 25, 25, 25]) # X,Y,Z,R,P,Y
+        self.panda.set_collision_threshold(cartesian_forces=[20, 20, 10, 25, 25, 25]) # X,Y,Z,R,P,Y
         while True:
             # panda : move to joint position
-            print '##### init arm start'
-            self.panda.enable_robot()
-            self.panda.move_to_joint_position(self._hyperparams['x0'][condition][0:7])
-            print '##### init arm finished'
+
             ## TODO : where below line should be located?
             # new_sample = self._init_sample(condition, feature_fn=feature_fn)   # new_sample: class 'Sample'
 
-            try:    
+            try:
+                # self.panda.enable_robot()
+                if not self.panda.is_enabled_robot():
+                    raise StopIteration
+                self.panda.move_to_joint_position(self._hyperparams['x0'][condition][0:7])
+                time.sleep(2)
+                
                 # Take the sample.
                 for t in range(self.T):
                     X_t = new_sample.get_X(t=t)
                     obs_t = new_sample.get_obs(t=t)
                     mj_U = policy.act(X_t, obs_t, t, noise[t, :])
+                    mj_U_origin = mj_U.copy()
+                    for i in range(len(mj_U)):
+                        if i < 4 and mj_U[i] > torq_max1:
+                            mj_U[i] = torq_max1
+                        elif i < 4 and mj_U[i] < -torq_max1:
+                            mj_U[i] = -torq_max1
+                        elif i >= 4 and mj_U[i] > torq_max2:
+                            mj_U[i] = torq_max2
+                        elif i >= 4 and mj_U[i] < -torq_max2:
+                            mj_U[i] = -torq_max2
 
                     U[t, :] = mj_U
+                    U_origin[t,:] = mj_U_origin
                     # print 'mj_U: ', mj_U
                     # print 'mj_U dict: ', self.list_to_dict(mj_U)
                     
@@ -132,27 +162,40 @@ class AgentPanda(Agent):
                         # self.panda.enable_robot()
                         # for _ in range(self._hyperparams['substeps']):
 
+                        if self.panda.has_collided():
+                            raise StopIteration
+
+                        if not self.panda.is_enabled_robot():
+                            raise StopIteration
                         # panda move with mj_U
                         # self.panda.set_joint_velocities(self.list_to_dict(mj_U))
                         # self.panda.exec_velocity_cmd(mj_U)
                         self.panda.exec_torque_cmd(mj_U)
                         # self.panda.exec_position_cmd(mj_U)
 
-                        if not self.panda.is_enabled_robot():
-                            raise StopIteration
-
-                        print "current step(t): ", t
+                        print("current step(t): ", t)
                         self._set_sample(new_sample, mj_X, t, condition, feature_fn=feature_fn)
+                    
+                    self.r.sleep() # to sample data at some frequency
+
+                for i in range(15):      # Torque commands for allowing robot finish the trajectory
+                    self.panda.exec_torque_cmd([0,0,0,0,0,0,0])
+                time.sleep(1)
+
                 break
 
             except StopIteration:
-                print "robot stopped!!!"
+                print("robot stopped!!!")
+                self.panda.enable_robot()
+                time.sleep(2)
                 continue
             
             finally:
-
-                f = '/home/panda_gps/gps/experiments/panda_test_dongju/action.npy'
+                f = '/home/panda_gps/gps/experiments/panda_test_dongju/action_origin_' + str(iteration) + '.npy'
+                np.save(f, U_origin)
+                f = '/home/panda_gps/gps/experiments/panda_test_dongju/action_clipped_' + str(iteration) + '.npy'
                 np.save(f, U)
+        
         new_sample.set(ACTION, U)
         new_sample.set(NOISE, noise)
         if save:
@@ -196,7 +239,7 @@ class AgentPanda(Agent):
             sample.set(END_EFFECTOR_POINT_VELOCITIES_NO_TARGET, np.delete(np.zeros_like(eepts), self._hyperparams['target_idx']), t=0)
         
         ## TODO : enable this again when after install camera
-        '''
+        
         # only save subsequent images if image is part of observation
         if RGB_IMAGE in self.obs_data_types:
             ## TODO : replace below line with other function
@@ -216,7 +259,7 @@ class AgentPanda(Agent):
                 sample.set(IMAGE_FEAT, feature_fn(obs), t=0)
             else:
                 sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=0)
-     	'''
+     	
         return sample
 
     def _set_sample(self, sample, mj_X, t, condition, feature_fn=None):
@@ -238,23 +281,28 @@ class AgentPanda(Agent):
         ee_vel, ee_omg = self.panda.ee_velocity()
         sample.set(END_EFFECTOR_POINT_VELOCITIES, list(ee_vel) + list(ee_omg), t=t+1)
         sample.set(END_EFFECTOR_POINT_JACOBIANS, self.panda.jacobian(), t=t+1)
-
+        
         time_out = True
+        """
         s0 = time.time()
         while (np.all(self.prev_positions == curr_positions)):
             s1 = time.time()
             if s1-s0 >= 0.1:
                 break
-        
-
+        """
         self.prev_positions = curr_positions
         print('Joint Positions: ' + repr(self.prev_positions) + '\n')
 
         ## TODO : enable this again when after install camera
-        '''
+        
         if RGB_IMAGE in self.obs_data_types:
             ## TODO : replace below line with panda function
-            self.img = self.baxter.get_baxter_camera_image()
+            frames = pipline.wait_for_frames()
+            color_frames = frames.get_color_frame()            
+            self.img = np.asanyarray(color_frame.get_data())
+            cv2.imshow('realsense', self.img)
+            cv2.waitKey()
+            
             sample.set(RGB_IMAGE, np.transpose(self.img, (2, 1, 0)).flatten(), t = t+1)
             ## TODO : check whether below line is neccessary
             sample.set(RGB_IMAGE_SIZE, [self._hyperparams['image_channels'],
@@ -265,8 +313,7 @@ class AgentPanda(Agent):
                 sample.set(IMAGE_FEAT, feature_fn(obs), t=t+1)
             else:
                 sample.set(IMAGE_FEAT, np.zeros((self._hyperparams['sensor_dims'][IMAGE_FEAT],)), t=t+1)
-		'''
-
+		
     def _get_image_from_obs(self, obs):
         imstart = 0
         imend = 0
