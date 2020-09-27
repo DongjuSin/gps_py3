@@ -76,7 +76,7 @@ AGENT_BOX2D = {
     'render': True,
 }
 
-AGENT_PANDA = {
+AGENT_INDY = {
     'substeps': 1,
     'camera_pos': np.array([2., 3., 2., 0., 0., 0.]),
     'image_width': 300,
