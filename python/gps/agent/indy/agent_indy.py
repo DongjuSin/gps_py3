@@ -124,7 +124,7 @@ class AgentIndy(Agent):
                         var * np.random.randn(1, 3)
         
         ### add a function to move indy robot to initial position.
-        self.indy.joint_move_to(self._hyperparams[‘x0’][condition][0:7])
+        self.indy.joint_move_to(self._hyperparams[‘x0’][condition][0:6])
         ###
         time.sleep(2)
         
@@ -163,7 +163,7 @@ class AgentIndy(Agent):
         """
         sample = Sample(self)
 
-        self.indy.joint_move_to(self._hyperparams[‘x0’][condition][0:7])
+        self.indy.joint_move_to(self._hyperparams[‘x0’][condition][0:6])
         # Initialize sample with stuff from _data
         # indy : get joint positions
         self.prev_positions = self.indy.get_joint_pos()
