@@ -42,16 +42,11 @@ class Textbox:
 
     #TODO: Add docstrings here.
     def set_text(self, text):
-        print('set_text 1')
         self._text_arr = [text]
-        print('set_text 2')
         self._text_box.set_text('\n'.join(self._text_arr))
-        print('set_text 3')
         self.log_text(text)
-        print('set_text 4')
         self.draw()
-        print('set_text 5')
-
+        
     def append_text(self, text):
         self._text_arr.append(text)
         if len(self._text_arr) > self._max_display_size:
@@ -72,25 +67,16 @@ class Textbox:
 
     def draw(self):
         # color, alpha = self._ax.get_axis_bgcolor(), self._ax.get_alpha()
-        print('draw 1')
         color, alpha = self._ax.get_facecolor(), self._ax.get_alpha()
-        print('draw 2')
         # self._ax.set_axis_bgcolor(mpl.rcParams['figure.facecolor'])
-        print('draw 3')
         self._ax.set_facecolor(mpl.rcParams['figure.facecolor'])
-        print('draw 4')
         self._ax.draw_artist(self._ax.patch)
         # self._ax.set_axis_bgcolor(ColorConverter().to_rgba(color, alpha))
-        print('draw 5')
         self._ax.set_facecolor(ColorConverter().to_rgba(color, alpha))
         
-        print('draw 6')
         self._ax.draw_artist(self._ax.patch)
-        print('draw 7')
         self._ax.draw_artist(self._text_box)
         # self._fig.canvas.update() ## Qt4Agg
-        print('draw 8')
         self._fig.canvas.draw() ## TKAgg
-        print('draw 9')
         self._fig.canvas.flush_events()   # Fixes bug with Qt4Agg backend
-        print('draw 10')
+        

@@ -81,7 +81,7 @@ class GPSMain(object):
 
                 self._take_iteration(itr, traj_sample_lists)
                 ## pretrain local controller
-                pol_sample_lists = self._take_policy_samples(itr)
+                pol_sample_lists = self._take_policy_samples()
                 # pol_sample_lists = None
                 self._log_data(itr, traj_sample_lists, pol_sample_lists)
                 input('Press Enter to proceed next iteration...')
@@ -100,8 +100,12 @@ class GPSMain(object):
             N: the number of policy samples to take
         Returns: None
         """
+        itr = 1
         algorithm_file = self._data_files_dir + 'algorithm_itr_%02d.pkl' % itr
         self.algorithm = self.data_logger.unpickle(algorithm_file)
+
+        self.algorithm.policy_opt.main_itr = itr
+        
         if self.algorithm is None:
             print("Error: cannot find '%s.'" % algorithm_file)
             os._exit(1) # called instead of sys.exit(), since t
@@ -170,6 +174,8 @@ class GPSMain(object):
         else:
             pol = self.algorithm.cur[cond].traj_distr
         
+        self.algorithm.policy_opt.main_itr = itr
+
         if self.gui:
             self.gui.set_image_overlays(cond)   # Must call for each new cond.
             redo = True
@@ -226,7 +232,7 @@ class GPSMain(object):
         if self.gui:
             self.gui.stop_display_calculating()
 
-    def _take_policy_samples(self, itr, N=None):
+    def _take_policy_samples(self, N=None):
         """
         Take samples from the policy to see how it's doing.
         Args:
@@ -246,7 +252,7 @@ class GPSMain(object):
         
         for cond in range(len(self._test_idx)):
             pol_samples[cond][0] = self.agent.sample(
-                self.algorithm.policy_opt.policy, self._test_idx[cond], itr,
+                self.algorithm.policy_opt.policy, self._test_idx[cond],
                 verbose=verbose, save=False, noisy=False)
         '''
         for cond in range(len(self._test_idx)):

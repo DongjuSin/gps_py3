@@ -174,7 +174,7 @@ class PygameFramework(framework.FrameworkBase):
         super(PygameFramework, self).__init__()
 
         self.__reset()
-        print('Initializing pygame framework...')
+        
         # Pygame Initialization
         pygame.init()
         caption = "Python Box2D Testbed - " + self.name

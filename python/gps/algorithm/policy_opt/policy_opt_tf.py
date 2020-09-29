@@ -31,6 +31,7 @@ class PolicyOptTf(PolicyOpt):
         tf.set_random_seed(self._hyperparams['random_seed'])
 
         self.tf_iter = 0
+        self.checkpoint_file = self._hyperparams['checkpoint_prefix']
         self.batch_size = self._hyperparams['batch_size']
         self.device_string = "/cpu:0"
         if self._hyperparams['use_gpu'] == 1:
@@ -44,6 +45,11 @@ class PolicyOptTf(PolicyOpt):
         self.action_tensor = None  # mu true
         self.solver = None
         self.feat_vals = None
+
+        # self.main_itr = None    # Set this value to None when training
+        self.main_itr = 1       # Set this value to i-th iteration when testing policy at i-th iteration
+                                  # or when resuming training at i-th iteration.
+
         self.init_network()
         self.init_solver()
         self.var = self._hyperparams['init_var'] * np.ones(dU)
@@ -147,7 +153,8 @@ class PolicyOptTf(PolicyOpt):
 
         # Assuming that N*T >= self.batch_size.
         batches_per_epoch = np.floor(N*T / self.batch_size)
-        idx = range(N*T)
+        # idx = range(N*T)
+        idx = list(range(N*T))
         average_loss = 0
         np.random.shuffle(idx)
 
@@ -251,11 +258,19 @@ class PolicyOptTf(PolicyOpt):
 
     # For pickling.
     def __getstate__(self):
+        '''
         with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
             self.save_model(f.name) # TODO - is this implemented.
             f.seek(0)
             with open(f.name, 'r') as f2:
                 wts = f2.read()
+        '''
+        # check_file = self.checkpoint_file + '%02d' % self.main_itr + '.ckpt'
+        check_file = self.checkpoint_file + str(self.main_itr) + '.ckpt'
+        check_path = self.saver.save(self.sess, check_file, write_meta_graph=True)
+        LOGGER.debug('Saving model to: %s', check_path)
+        print('Saving model to: ' + check_path)
+
         return {
             'hyperparams': self._hyperparams,
             'dO': self._dO,
@@ -265,7 +280,7 @@ class PolicyOptTf(PolicyOpt):
             'tf_iter': self.tf_iter,
             'x_idx': self.policy.x_idx,
             'chol_pol_covar': self.policy.chol_pol_covar,
-            'wts': wts,
+            # 'wts': wts,
         }
 
     # For unpickling.
@@ -279,8 +294,14 @@ class PolicyOptTf(PolicyOpt):
         self.policy.chol_pol_covar = state['chol_pol_covar']
         self.tf_iter = state['tf_iter']
 
+        '''
         with tempfile.NamedTemporaryFile('w+b', delete=True) as f:
             f.write(state['wts'])
             f.seek(0)
             self.restore_model(f.name)
+        '''
+        # check_file = self.checkpoint_file + '%02d' % self.main_itr + '.ckpt'
+        check_file = self.checkpoint_file + str(self.main_itr) + '.ckpt'
+        self.saver.restore(self.sess, check_file)
+        LOGGER.debug('Restoring model from: %s', check_file)
 

@@ -237,12 +237,9 @@ class GPSTrainingGUI(object):
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
 
     def set_status_text(self, text):
-        print('set_status_text 1')
         self._status_output.set_text(text)
-        print('set_status_text 2')
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels
-        print('set_status_text 2')
-
+        
     def set_output_text(self, text):
         self._algthm_output.set_text(text)
         self._cost_plotter.draw_ticklabels()    # redraw overflow ticklabels

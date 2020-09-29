@@ -96,8 +96,10 @@ class AgentBox2D(Agent):
                 b2d_X = self._worlds[condition].get_state()
                 print("current step(t): ", t)
                 self._set_sample(new_sample, b2d_X, t)
-            img_t = new_sample.get(RGB_IMAGE, t)
-            img.append(img_t)
+            
+            if RGB_IMAGE in self.obs_data_types:
+                img_t = new_sample.get(RGB_IMAGE, t)
+                img.append(img_t)
         img = np.asarray(img)
 
         path = '/home/panda_gps/gps_py3/experiments/' + 'box2d_realsense_example' + '/data_files/check_fp'

@@ -1,0 +1,4 @@
+model_checkpoint_path: "/home/panda_gps/gps_py3/python/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint_2.ckpt"
+all_model_checkpoint_paths: "/home/panda_gps/gps_py3/python/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint_0.ckpt"
+all_model_checkpoint_paths: "/home/panda_gps/gps_py3/python/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint_1.ckpt"
+all_model_checkpoint_paths: "/home/panda_gps/gps_py3/python/gps/algorithm/policy_opt/tf_checkpoint/policy_checkpoint_2.ckpt"
